@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collect Hand Landmarks</title>
+  <link rel="stylesheet" href="../css/index.css">
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 16px; background:#0f172a; color:#e2e8f0; }
+    .container { max-width: 960px; margin: 0 auto; }
+    .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:16px; }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    label { font-weight:600; }
+    select, input[type="text"], button { padding:10px 12px; border-radius:8px; border:1px solid #334155; background:#0b1220; color:#e2e8f0; }
+    button { cursor:pointer; border-color:#475569; }
+    button.primary { background:#2563eb; border-color:#1d4ed8; }
+    button:disabled { opacity:0.6; cursor:not-allowed; }
+    canvas { width:100%; height:auto; background:#000; border-radius:12px; }
+    .grid { display:grid; grid-template-columns: 1fr; gap:16px; }
+    @media (min-width: 900px) { .grid { grid-template-columns: 3fr 2fr; } }
+    .muted { color:#94a3b8; font-size:14px; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#0b1220; border:1px solid #334155; padding:2px 6px; border-radius:6px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Collect Hand Landmarks</h1>
+    <p class="muted">Use your webcam to capture MediaPipe Hands landmarks for training datasets.</p>
+
+    <div class="card" style="margin:16px 0;">
+      <div class="row" style="gap:16px;">
+        <div>
+          <label for="cameraSelect">Camera</label><br>
+          <select id="cameraSelect"></select>
+        </div>
+        <div>
+          <label for="labelInput">Gesture label</label><br>
+          <input id="labelInput" type="text" placeholder="e.g. thumbs_up">
+        </div>
+        <div style="display:flex; gap:8px; align-items:flex-end;">
+          <button id="saveLandmarkBtn" class="primary">Save frame</button>
+          <button id="downloadBtn">Download CSV</button>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:8px;">Tips: Press <span class="kbd">S</span> to save, <span class="kbd">D</span> to download. Ensure your hand is visible.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <video id="input_video" autoplay playsinline style="display:none;"></video>
+        <canvas id="output_canvas"></canvas>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">Session</h3>
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <div><strong>Frames captured:</strong> <span id="countSpan">0</span></div>
+            <div class="muted">One row per frame: x1,y1,z1,...,x21,y21,z21,label</div>
+          </div>
+          <button id="clearBtn" title="Clear session data">Clear</button>
+        </div>
+        <hr style="border-color:#1f2937;">
+        <div id="preview" class="muted">No samples yet. Captured rows will preview here.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="collect-landmarks.js"></script>
+</body>
+</html>
+
