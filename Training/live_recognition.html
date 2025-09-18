@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Sign Recognition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        select, input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .video-container {
+            position: relative;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        #input_video {
+            display: none;
+        }
+        
+        #output_canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            max-width: 100%;
+        }
+        
+        .status-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .recognition-result {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .gesture-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 30px;
+            background: #ddd;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444, #ffaa00, #44ff44);
+            transition: width 0.3s ease;
+            border-radius: 15px;
+        }
+        
+        .confidence-text {
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .data-info {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .gesture-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .gesture-item {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        
+        .gesture-count {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Live Sign Language Recognition</h1>
+            <p>Load your training data and start real-time gesture recognition</p>
+        </div>
+
+        <!-- File Upload -->
+        <div class="controls">
+            <input type="file" id="csvFile" accept=".csv" style="display: none;">
+            <button onclick="document.getElementById('csvFile').click()">📁 Load Training Data (CSV)</button>
+            <select id="cameraSelect">
+                <option value="">Loading cameras...</option>
+            </select>
+            <button id="startBtn" disabled>▶️ Start Recognition</button>
+            <button id="stopBtn" disabled>⏹️ Stop Recognition</button>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessage"></div>
+
+        <!-- Video Display -->
+        <div class="video-container">
+            <video id="input_video" autoplay playsinline muted></video>
+            <canvas id="output_canvas"></canvas>
+        </div>
+
+        <!-- Recognition Results -->
+        <div class="recognition-result" id="recognitionResult" style="display: none;">
+            <div class="gesture-name" id="gestureName">No gesture detected</div>
+            <div class="confidence-bar">
+                <div class="confidence-fill" id="confidenceBar" style="width: 0%"></div>
+            </div>
+            <div class="confidence-text" id="confidenceText">Confidence: 0%</div>
+        </div>
+
+        <!-- Status Panel -->
+        <div class="status-panel">
+            <h3>📊 System Status</h3>
+            <div class="status-item">
+                <span>Training Data:</span>
+                <span id="dataStatus">No data loaded</span>
+            </div>
+            <div class="status-item">
+                <span>Recognition Status:</span>
+                <span id="recognitionStatus">Stopped</span>
+            </div>
+            <div class="status-item">
+                <span>Hand Detected:</span>
+                <span id="handStatus">No</span>
+            </div>
+            <div class="status-item">
+                <span>Camera:</span>
+                <span id="cameraStatus">Not connected</span>
+            </div>
+        </div>
+
+        
+        <div class="data-info" id="dataInfo" style="display: none;">
+            <h3>📚 Loaded Training Data</h3>
+            <div id="dataSummary"></div>
+            <div class="gesture-list" id="gestureList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let trainingData = [];
+        let isRecognizing = false;
+        let currentStream = null;
+        let lastLandmarks = null;
+        let lastRecognizedGesture = null;
+        let gestureConfidence = 0;
+        
+        // Recognition settings
+        const confidenceThreshold = 40; // Lower threshold for better detection
+        const maxDistance = 4.0; // More forgiving distance
+        const smoothingFactor = 0.8;
+        
+        // DOM elements
+        const videoElement = document.getElementById('input_video');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const cameraSelect = document.getElementById('cameraSelect');
+        const csvFile = document.getElementById('csvFile');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const recognitionResult = document.getElementById('recognitionResult');
+        const gestureName = document.getElementById('gestureName');
+        const confidenceBar = document.getElementById('confidenceBar');
+        const confidenceText = document.getElementById('confidenceText');
+        const dataStatus = document.getElementById('dataStatus');
+        const recognitionStatus = document.getElementById('recognitionStatus');
+        const handStatus = document.getElementById('handStatus');
+        const cameraStatus = document.getElementById('cameraStatus');
+        const dataInfo = document.getElementById('dataInfo');
+        const dataSummary = document.getElementById('dataSummary');
+        const gestureList = document.getElementById('gestureList');
+
+        // Initialize MediaPipe Hands
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.7
+        });
+
+        // Camera functions
+        async function getCameras() {
+            try {
+                let devices = await navigator.mediaDevices.enumerateDevices();
+                let videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+                // If no devices listed, try requesting permission, then re-enumerate
+                if (videoDevices.length === 0) {
+                    try {
+                        const temp = await navigator.mediaDevices.getUserMedia({ video: true });
+                        // Immediately stop the temp stream
+                        temp.getTracks().forEach(t => t.stop());
+                        devices = await navigator.mediaDevices.enumerateDevices();
+                        videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    } catch (_) {
+                        // Ignore, will handle below
+                    }
+                }
+
+                cameraSelect.innerHTML = '';
+                if (videoDevices.length > 0) {
+                    videoDevices.forEach((device, i) => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Camera ${i + 1}`;
+                        cameraSelect.appendChild(option);
+                    });
+                    cameraStatus.textContent = `${videoDevices.length} camera(s) found`;
+                } else {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.text = 'No cameras found';
+                    cameraSelect.appendChild(option);
+                    cameraStatus.textContent = 'No cameras found';
+                }
+            } catch (error) {
+                showError('Error accessing cameras: ' + error.message);
+            }
+        }
+
+        async function startCamera(deviceId) {
+            try {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+
+                
+                let effectiveDeviceId = deviceId;
+                if (effectiveDeviceId) {
+                    const exists = Array.from(cameraSelect.options).some(o => o.value === effectiveDeviceId);
+                    if (!exists) effectiveDeviceId = undefined;
+                }
+
+                const constraints = effectiveDeviceId
+                    ? { video: { deviceId: { exact: effectiveDeviceId } } }
+                    : { video: true };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                currentStream = stream;
+                videoElement.srcObject = stream;
+
+                videoElement.onloadedmetadata = () => {
+                    videoElement.play();
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                    cameraStatus.textContent = 'Connected';
+                };
+            } catch (error) {
+                // If the requested device was not found, refresh devices and retry with default
+                if (error && (error.name === 'OverconstrainedError' || error.name === 'NotFoundError')) {
+                    await getCameras();
+                    try {
+                        const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        currentStream = fallbackStream;
+                        videoElement.srcObject = fallbackStream;
+                        videoElement.onloadedmetadata = () => {
+                            videoElement.play();
+                            canvasElement.width = videoElement.videoWidth;
+                            canvasElement.height = videoElement.videoHeight;
+                            cameraStatus.textContent = 'Connected (default)';
+                        };
+                        return;
+                    } catch (innerErr) {
+                        showError('Error starting camera: ' + innerErr.message);
+                        return;
+                    }
+                }
+                showError('Error starting camera: ' + error.message);
+            }
+        }
+
+        // CSV file handling
+        csvFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const csv = e.target.result;
+                        trainingData = parseCSV(csv);
+                        updateDataStatus();
+                        updateDataInfo();
+                        startBtn.disabled = false;
+                        showSuccess(`Successfully loaded ${trainingData.length} training samples`);
+                    } catch (error) {
+                        showError('Error parsing CSV file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function parseCSV(csv) {
+            const lines = csv.trim().split('\n');
+            return lines.map(line => {
+                const values = line.split(',');
+                const landmarks = [];
+                for (let i = 0; i < 63; i++) {
+                    landmarks.push(parseFloat(values[i]));
+                }
+                const label = values[63];
+                return { landmarks, label };
+            });
+        }
+
+        function updateDataStatus() {
+            const gestureCounts = {};
+            trainingData.forEach(item => {
+                gestureCounts[item.label] = (gestureCounts[item.label] || 0) + 1;
+            });
+            
+            const totalSamples = trainingData.length;
+            const uniqueGestures = Object.keys(gestureCounts).length;
+            
+            dataStatus.textContent = `${totalSamples} samples, ${uniqueGestures} gestures`;
+        }
+
+        function updateDataInfo() {
+            const gestureCounts = {};
+            trainingData.forEach(item => {
+                gestureCounts[item.label] = (gestureCounts[item.label] || 0) + 1;
+            });
+            
+            const totalSamples = trainingData.length;
+            const uniqueGestures = Object.keys(gestureCounts).length;
+            
+            dataSummary.innerHTML = `
+                <strong>Total samples:</strong> ${totalSamples}<br>
+                <strong>Unique gestures:</strong> ${uniqueGestures}
+            `;
+            
+            gestureList.innerHTML = '';
+            Object.entries(gestureCounts).forEach(([gesture, count]) => {
+                const item = document.createElement('div');
+                item.className = 'gesture-item';
+                item.innerHTML = `
+                    <div><strong>${gesture}</strong></div>
+                    <div class="gesture-count">${count} samples</div>
+                `;
+                gestureList.appendChild(item);
+            });
+            
+            dataInfo.style.display = 'block';
+        }
+
+        // Hand detection
+        hands.onResults(results => {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+            
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 2});
+                    drawLandmarks(canvasCtx, landmarks, {color: '#FF0000', lineWidth: 1});
+                }
+                lastLandmarks = results.multiHandLandmarks[0];
+                handStatus.textContent = 'Yes';
+                
+                if (isRecognizing && trainingData.length > 0) {
+                    const result = recognizeGesture(lastLandmarks);
+                    updateRecognitionResult(result);
+                }
+            } else {
+                lastLandmarks = null;
+                handStatus.textContent = 'No';
+                if (isRecognizing) {
+                    gestureName.textContent = 'No hand detected';
+                    confidenceBar.style.width = '0%';
+                    confidenceText.textContent = 'Confidence: 0%';
+                }
+            }
+            canvasCtx.restore();
+        });
+
+        // Gesture recognition
+        function recognizeGesture(landmarks) {
+            const currentFeatures = [];
+            landmarks.forEach(lm => {
+                currentFeatures.push(lm.x, lm.y, lm.z);
+            });
+            
+            let bestMatch = null;
+            let bestDistance = Infinity;
+            
+            trainingData.forEach(item => {
+                const distance = calculateDistance(currentFeatures, item.landmarks);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestMatch = item.label;
+                }
+            });
+            
+            const confidence = Math.max(0, Math.min(100, (1 - bestDistance / maxDistance) * 100));
+            
+            // Apply smoothing
+            if (lastRecognizedGesture === bestMatch) {
+                gestureConfidence = gestureConfidence * smoothingFactor + confidence * (1 - smoothingFactor);
+            } else {
+                gestureConfidence = confidence;
+            }
+            
+            lastRecognizedGesture = bestMatch;
+            
+            return {
+                gesture: bestMatch,
+                confidence: gestureConfidence,
+                distance: bestDistance
+            };
+        }
+
+        function calculateDistance(features1, features2) {
+            let sum = 0;
+            for (let i = 0; i < features1.length; i++) {
+                sum += Math.pow(features1[i] - features2[i], 2);
+            }
+            return Math.sqrt(sum);
+        }
+
+        function updateRecognitionResult(result) {
+            recognitionResult.style.display = 'block';
+            gestureName.textContent = result.gesture || 'Unknown';
+            confidenceBar.style.width = `${result.confidence}%`;
+            confidenceText.textContent = `Confidence: ${result.confidence.toFixed(1)}%`;
+        }
+
+        // Hand detection loop
+        async function detectHands() {
+            if (videoElement.readyState === 4) {
+                await hands.send({image: videoElement});
+            }
+            requestAnimationFrame(detectHands);
+        }
+
+        // Event listeners
+        cameraSelect.addEventListener('change', () => {
+            startCamera(cameraSelect.value);
+        });
+
+        startBtn.addEventListener('click', () => {
+            if (trainingData.length === 0) {
+                showError('Please load training data first!');
+                return;
+            }
+            
+            isRecognizing = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            recognitionStatus.textContent = 'Active';
+            recognitionResult.style.display = 'block';
+            showSuccess('Recognition started! Show your hand to the camera.');
+        });
+
+        stopBtn.addEventListener('click', () => {
+            isRecognizing = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            recognitionStatus.textContent = 'Stopped';
+            recognitionResult.style.display = 'none';
+            gestureName.textContent = 'No gesture detected';
+            confidenceBar.style.width = '0%';
+            confidenceText.textContent = 'Confidence: 0%';
+            showSuccess('Recognition stopped.');
+        });
+
+        // Utility functions
+        function showError(message) {
+            statusMessage.innerHTML = `<div class="error">error${message}</div>`;
+            setTimeout(() => {
+                statusMessage.innerHTML = '';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            statusMessage.innerHTML = `<div class="success">success ${message}</div>`;
+            setTimeout(() => {
+                statusMessage.innerHTML = '';
+            }, 3000);
+        }
+
+        // Warn if opened via file:// which often blocks camera access
+        if (location.protocol === 'file:') {
+            statusMessage.innerHTML = '<div class="error">Open this page via a local server (http://) instead of file:// for camera access.</div>';
+        }
+
+        // Update camera list when devices change (plug/unplug)
+        if (navigator.mediaDevices && 'addEventListener' in navigator.mediaDevices) {
+            navigator.mediaDevices.addEventListener('devicechange', () => {
+                getCameras();
+            });
+        }
+
+        // Initialize
+        getCameras().then(() => {
+            if (cameraSelect.options.length > 0) {
+                startCamera(cameraSelect.value);
+            } else {
+                startCamera();
+            }
+        });
+
+        videoElement.onplay = detectHands;
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                if (isRecognizing) {
+                    stopBtn.click();
+                } else {
+                    startBtn.click();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
