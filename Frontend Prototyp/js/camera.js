@@ -62,6 +62,16 @@ window.addEventListener('DOMContentLoaded', async () => {
     drawFrame();
 });
 
+// const hands = new Hands({
+//     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+// });
+
+// hands.setOptions({
+//     maxNumHands: 2,
+//     modelComplexity: 1,
+//     minDetectionConfidence: 0.7,
+//     minTrackingConfidence: 0.7
+// });
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
     if (stream) {
