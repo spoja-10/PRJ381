@@ -1,4 +1,3 @@
-
     // DOM Elements
     const video = document.createElement('video');
     video.setAttribute('playsinline', '');
@@ -112,7 +111,7 @@ hands.setOptions({
             const result = recognizeGesture(lastLandmarks);
             if (result.confidence > 70) {
                 gestureText.textContent = result.gesture || 'Unknown';
-                gestureConfidenceElem.textContent = `Confidence: ${result.confidence.toFixed(1)}%`;
+                gestureConfidence.textContent = `Confidence: ${result.confidence.toFixed(1)}%`;
                 translationText.textContent = `"${translations[result.gesture] || 'No translation available'}"`;
                 
                 gestureCards.forEach(card => {
@@ -123,7 +122,7 @@ hands.setOptions({
                 });
             } else {
                 gestureText.textContent = 'No hand detected';
-                gestureConfidenceElem.textContent = 'Confidence: 0%';
+                gestureConfidence.textContent = 'Confidence: 0%';
                 translationText.textContent = '';
                 gestureCards.forEach(card => card.style.background = 'rgba(255, 255, 255, 0.05)');
             }
@@ -131,7 +130,7 @@ hands.setOptions({
     } else {
         if (isRecognizing) {
             gestureText.textContent = 'No hand detected';
-            gestureConfidenceElem.textContent = 'Confidence: 0%';
+            gestureConfidence.textContent = 'Confidence: 0%';
             translationText.textContent = '';
             gestureCards.forEach(card => card.style.background = 'rgba(255, 255, 255, 0.05)');
         }
@@ -210,7 +209,7 @@ function recognizeGesture(landmarks) {
             bestMatch = item.label;
         }
     });
-    const confidence = Math.max(0, Math.min(100, (1 - bestDistance / maxDistance) * 100));
+    const confidence = Math.max(0, Math.min(100, (1 - bestDistance / MaxDistance) * 100));
 
     // Smoothing
     if (lastRecognizedGesture === bestMatch) {
@@ -278,7 +277,7 @@ startBtn.addEventListener('click', () => {
     } else {
         startBtn.textContent = 'Start Recognition';
         gestureText.textContent = '—';
-        gestureConfidenceElem.textContent = 'Confidence: 0%';
+        gestureConfidence.textContent = 'Confidence: 0%';
     }
 });
 // Play button animation
@@ -308,53 +307,53 @@ function drawFrame() {
     let recognitionInterval;
     
  
-    startBtn.addEventListener('click', function() {
-        isRecognizing = !isRecognizing;
+    // startBtn.addEventListener('click', function() {
+    //     isRecognizing = !isRecognizing;
         
-        if (isRecognizing) {
-            // Start recognition
-            this.innerHTML = '<div class="loading"></div> Recognizing...';
+    //     if (isRecognizing) {
+    //         // Start recognition
+    //         this.innerHTML = '<div class="loading"></div> Recognizing...';
             
-            // Update status indicators
-            statusIndicators.forEach(indicator => {
-                indicator.style.background = 'var(--success)';
-            });
+    //         // Update status indicators
+    //         statusIndicators.forEach(indicator => {
+    //             indicator.style.background = 'var(--success)';
+    //         });
             
-            // Simulate gesture detection
-            recognitionInterval = setInterval(() => {
-                const randomIndex = Math.floor(Math.random() * gestureCards.length);
-                const randomGesture = gestureCards[randomIndex].dataset.gesture;
+    //         // Simulate gesture detection
+    //         recognitionInterval = setInterval(() => {
+    //             const randomIndex = Math.floor(Math.random() * gestureCards.length);
+    //             const randomGesture = gestureCards[randomIndex].dataset.gesture;
                 
-                gestureText.textContent = randomGesture;
-                gestureConfidence.textContent = `Confidence: ${Math.floor(Math.random() * 10) + 85}.${Math.floor(Math.random() * 10)}%`;
-                translationText.textContent = `"${translations[randomGesture]}"`;
+    //             gestureText.textContent = randomGesture;
+    //             gestureConfidence.textContent = `Confidence: ${Math.floor(Math.random() * 10) + 85}.${Math.floor(Math.random() * 10)}%`;
+    //             translationText.textContent = `"${translations[randomGesture]}"`;
                 
-                // Highlight the detected gesture card
-                gestureCards.forEach(card => {
-                    card.style.background = 'rgba(255, 255, 255, 0.05)';
-                    if (card.dataset.gesture === randomGesture) {
-                        card.style.background = 'rgba(16, 185, 129, 0.15)';
-                    }
-                });
-            }, 3000);
+    //             // Highlight the detected gesture card
+    //             gestureCards.forEach(card => {
+    //                 card.style.background = 'rgba(255, 255, 255, 0.05)';
+    //                 if (card.dataset.gesture === randomGesture) {
+    //                     card.style.background = 'rgba(16, 185, 129, 0.15)';
+    //                 }
+    //             });
+    //         }, 3000);
             
-        } else {
-            // Stop recognition
-            this.innerHTML = `
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z"/>
-                </svg>
-                Start Recognition
-            `;
+    //     } else {
+    //         // Stop recognition
+    //         this.innerHTML = `
+    //             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    //                 <path d="M8 5v14l11-7z"/>
+    //             </svg>
+    //             Start Recognition
+    //         `;
             
-            clearInterval(recognitionInterval);
+    //         clearInterval(recognitionInterval);
             
-            // Reset status indicators
-            statusIndicators.forEach(indicator => {
-                indicator.style.background = 'var(--warning)';
-            });
-        }
-    });
+    //         // Reset status indicators
+    //         statusIndicators.forEach(indicator => {
+    //             indicator.style.background = 'var(--warning)';
+    //         });
+    //     }
+    // });
 
     // Gesture card interactions
     gestureCards.forEach(card => {
