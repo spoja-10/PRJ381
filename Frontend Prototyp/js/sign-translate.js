@@ -21,7 +21,7 @@
     const gestureConfidence = document.querySelector('.gesture-confidence');
     const translationText = document.querySelector('.translation-text');
     const loadCsvBtn = document.getElementById('load-csv-btn');
-    const csvFile = document.getElementById('csv-file');
+    const csvFile = document.getElementById('csvFile');
 
     // Translations mapping
     const translations = {
@@ -271,7 +271,7 @@ startBtn.addEventListener('click', () => {
         alert('Please load training data first!');
         return;
     }
-    isRecognizing = !isRecognizing;
+    isRecognizing = true;
     if (isRecognizing) {
         startBtn.textContent = 'Stop Recognition';
     } else {
@@ -306,55 +306,6 @@ function drawFrame() {
 
     let recognitionInterval;
     
- 
-    // startBtn.addEventListener('click', function() {
-    //     isRecognizing = !isRecognizing;
-        
-    //     if (isRecognizing) {
-    //         // Start recognition
-    //         this.innerHTML = '<div class="loading"></div> Recognizing...';
-            
-    //         // Update status indicators
-    //         statusIndicators.forEach(indicator => {
-    //             indicator.style.background = 'var(--success)';
-    //         });
-            
-    //         // Simulate gesture detection
-    //         recognitionInterval = setInterval(() => {
-    //             const randomIndex = Math.floor(Math.random() * gestureCards.length);
-    //             const randomGesture = gestureCards[randomIndex].dataset.gesture;
-                
-    //             gestureText.textContent = randomGesture;
-    //             gestureConfidence.textContent = `Confidence: ${Math.floor(Math.random() * 10) + 85}.${Math.floor(Math.random() * 10)}%`;
-    //             translationText.textContent = `"${translations[randomGesture]}"`;
-                
-    //             // Highlight the detected gesture card
-    //             gestureCards.forEach(card => {
-    //                 card.style.background = 'rgba(255, 255, 255, 0.05)';
-    //                 if (card.dataset.gesture === randomGesture) {
-    //                     card.style.background = 'rgba(16, 185, 129, 0.15)';
-    //                 }
-    //             });
-    //         }, 3000);
-            
-    //     } else {
-    //         // Stop recognition
-    //         this.innerHTML = `
-    //             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-    //                 <path d="M8 5v14l11-7z"/>
-    //             </svg>
-    //             Start Recognition
-    //         `;
-            
-    //         clearInterval(recognitionInterval);
-            
-    //         // Reset status indicators
-    //         statusIndicators.forEach(indicator => {
-    //             indicator.style.background = 'var(--warning)';
-    //         });
-    //     }
-    // });
-
     // Gesture card interactions
     gestureCards.forEach(card => {
         card.addEventListener('click', function() {
