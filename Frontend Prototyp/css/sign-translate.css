@@ -225,6 +225,7 @@ body {
 .camera-select-container {
     position: relative;
     display: inline-block;
+    margin-left: auto;
 }
 
 #cameraSelect {
@@ -366,7 +367,9 @@ body {
     align-items: center;
     flex-wrap: nowrap;
 }
-
+.captions {
+    margin-bottom: 1.75rem;
+}
 /* Results Section */
 .detected-gesture {
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1));
@@ -412,10 +415,12 @@ body {
 .translation-text {
     font-size: 1.15rem;
     margin-bottom: 1.5rem;
-    min-height: 60px;
+    min-height: 40px;
     display: flex;
     align-items: center;
     line-height: 1.6;
+    color: var (--text);
+    font-weight: 500;
 }
 
 .audio-controls {
@@ -425,8 +430,8 @@ body {
 }
 
 .play-btn {
-    width: 52px;
-    height: 52px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--accent), var(--secondary));
     border: none;
@@ -436,17 +441,25 @@ body {
     justify-content: center;
     transition: all 0.3s ease;
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    flex-shrink: 0;
 }
 
 .play-btn:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
     box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
 }
-
+.play-btn:disabled {
+    background: var(--surfave-light);
+    cursor: not-allowed;
+    opacity: 0.5;
+    box-shadow: none;
+}
 .play-btn:active {
     transform: scale(0.95);
 }
-
+.play-btn svg {
+    margin-left: 3px;
+}
 .volume-slider {
     flex: 1;
     height: 6px;
@@ -481,6 +494,7 @@ body {
     text-align: center;
     font-size: 0.9rem;
     color: var(--text-muted);
+    flex-shrink: 0;
 }
 
 /* Gesture Library */
@@ -577,26 +591,6 @@ body {
         transform: rotate(360deg);
     }
 }
-
-/* Floating particles background */
-.particles {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    overflow: hidden;
-}
-
-.particle {
-    position: absolute;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-/* Responsive Design */
 @media (max-width: 1024px) {
     .main-content {
         grid-template-columns: 1fr;
@@ -611,7 +605,6 @@ body {
         gap: 1rem;
     }
 }
-
 @media (max-width: 768px) {
     .container {
         padding: 1.5rem;
@@ -631,26 +624,79 @@ body {
     
     .camera-controls {
         flex-wrap: wrap;
+        justify-content: center;
     }
     
     .btn {
         flex: 1;
-        min-width: 120px;
+        min-width: 140px;
     }
 }
-
 @media (max-width: 480px) {
-    .header h1 {
-        font-size: 1.75rem;
-    }
-    
-    .gesture-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .status-item {
-        font-size: 0.85rem;
-    }
+            .header h1 {
+                font-size: 1.75rem;
+            }
+
+            .gesture-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .status-item {
+                font-size: 0.85rem;
+            }
+            
+            .camera-controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .camera-select-container {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            #cameraSelect {
+                width: 100%;
+            }
+        }
+    @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }    
+/* Floating particles background */
+.particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
 /* Animations */

@@ -18,14 +18,14 @@
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1>AI Hand Gesture Recognition</h1>
-            <p>Bridging communication gaps with real-time gesture-to-speech technology</p>
+            <h1>Sign Language Interpreter</h1>
+            <p>Real-time gesture recognition and text-to-speech translation.</p>
         </header>
 
         <!-- Status Bar -->
         <div class="status-bar">
             <div class="status-item">
-                <div class="status-indicator"></div>
+                <span id="modelStatusIndicator" class="status-indicator warning"></span>
                 <span>Camera: <span id="cameraStatus">Disconnected</span></span>
             </div>
             <div class="status-item">
@@ -49,7 +49,7 @@
                     <h2 class="card-title">Live Camera Feed</h2>
                     <div class="camera-select-container">
                         <select id="cameraSelect">
-                            <option>Choose option</option>
+                            <option>Choose Camera</option>
                         </select>
                     </div> 
                 </div>
@@ -60,6 +60,14 @@
                             <path d="M9 12c0 1.642 1.358 3 3 3s3-1.358 3-3-1.358-3-3-3-3 1.358-3 3zm0 0L7 8m10 8l2-4M7 8h2m8 8h2"/>
                         </svg>
                         <p>Position your hands in front of the camera</p>
+                    </div>
+                </div>
+                <div class="captions">
+                    <div class="translation-output">
+                        <p class="translation-text">
+                            <!-- Placeholder for real-time translation -->
+                            <span id="captionDisplay">Caption will appear here after starting recognition...</span>
+                        </p>
                     </div>
                 </div>
                 <div class="camera-controls">    
@@ -86,13 +94,21 @@
                     <svg class="card-icon" viewBox="0 0 24 24">
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                     </svg>
-                    <h2 class="card-title">Recognition Results</h2>
+                    <h2 class="card-title">Real-time Detection</h2>
                 </div>
+
                 <div class="detected-gesture">
-                    <div class="gesture-text">Hello</div>
-                    <div class="gesture-confidence">Confidence: 0%</div>
+                    <p class="gesture-text" id="detectedGestureText">Awaiting Gesture...</p>
+                    <p class="gesture-confidence">Confidence: <span id="detectionConfidence">0.00%</span></p>
                 </div>
-                <div class="translation-output">
+                <div class="library-header">
+                    <svg class="library-icon" viewBox="0 0 24 24">
+                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-3.5 13.5v-3c0-.28-.22-.5-.5-.5H8c-.28 0-.5.22-.5.5v3c0 .28.22.5.5.5h2c.28 0 .5-.22.5-.5zM12 9V3.5L17.5 9H12z"/>
+                    </svg>
+                    <h2 class="card-title">Known Gesture Library</h2>
+                </div>
+                
+                <!--<div class="translation-output">
                     <div class="translation-text">
                         "Hello, how are you today?"
                     </div>
@@ -105,19 +121,34 @@
                         <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="75">
                         <span class="volume-value">75%</span>
                     </div>
+                </div> -->
+                <div class="gesture-grid" id="gestureLibrary">
+                    <!-- Example gesture card -->
+                    <div class="gesture-card">
+                        <span class="gesture-emoji">👋</span>
+                        <p class="gesture-name">Hello</p>
+                    </div>
+                    <div class="gesture-card">
+                        <span class="gesture-emoji">👍</span>
+                        <p class="gesture-name">Yes</p>
+                    </div>
+                    <div class="gesture-card">
+                        <span class="gesture-emoji">🙏</span>
+                        <p class="gesture-name">Thank You</p>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Gesture Library -->
-        <div class="gesture-library">
+        <!--<div class="gesture-library">
             <div class="library-header">
                 <svg class="library-icon" viewBox="0 0 24 24">
                     <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
                 </svg>
                 <h2 class="card-title">Supported Gestures</h2>
-            </div>
-            <div class="gesture-grid">
+            </div> -->
+           <!--<div class="gesture-grid">
                 <div class="gesture-card" data-gesture="Hello">
                     <div class="gesture-emoji">👋</div>
                     <div class="gesture-name">Hello</div>
@@ -142,7 +173,7 @@
                     <div class="gesture-emoji">✋</div>
                     <div class="gesture-name">Stop</div>
                 </div>
-            </div>
+            </div> -->
         </div>
     </div>
    

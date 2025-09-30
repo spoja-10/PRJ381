@@ -1,4 +1,5 @@
     // DOM Elements
+    
     const video = document.createElement('video');
     video.setAttribute('playsinline', '');
     video.setAttribute('autoplay', '');
@@ -22,6 +23,12 @@
     const translationText = document.querySelector('.translation-text');
     const loadCsvBtn = document.getElementById('load-csv-btn');
     const csvFile = document.getElementById('csvFile');
+    const captionOutput = document.getElementById('captionDisplay');
+    //speech recognition variables
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let speechRecognitionInstance = null;
+    let isListeningToSpeech = false;
+    
 
     // Translations mapping
     const translations = {
@@ -36,10 +43,10 @@
     let isRecognizing = false;
     let trainingData = [];
     let lastRecognizedGesture = null;
-    let gestureConfidenceValue = 0;
+    let currentGestureConfidence = 0;
     const smoothingFactor = 0.5;
     const MaxDistance = 5; // Adjust based on needs
-   
+    
    
     // Floating particles animation
     function createParticles() {
@@ -213,15 +220,15 @@ function recognizeGesture(landmarks) {
 
     // Smoothing
     if (lastRecognizedGesture === bestMatch) {
-        gestureConfidence = gestureConfidence * smoothingFactor + confidence * (1 - smoothingFactor);
+        currentGestureConfidence = currentGestureConfidence * smoothingFactor + confidence * (1 - smoothingFactor);
     } else {
-        gestureConfidence = confidence;
+        currentGestureConfidence = confidence;
     }
     lastRecognizedGesture = bestMatch;
 
     return {
         gesture: bestMatch,
-        confidence: gestureConfidence,
+        confidence: currentGestureConfidence,
         distance: bestDistance
     };
 }
@@ -266,18 +273,62 @@ csvFile.addEventListener('change', (event) => {
         reader.readAsText(file);
     }
 });
+
 startBtn.addEventListener('click', () => {
-    if (trainingData.length === 0) {
-        alert('Please load training data first!');
+    // 1. Prioritize Speech-to-Text Stop/Start logic
+    if (isListeningToSpeech) {
+        // If S-T-T is active, stop it. This triggers speechRecognitionInstance.onend()
+        speechRecognitionInstance.stop();
+        // Re-enable gesture recognition immediately after stopping speech, if needed.
+        // isRecognizing = true; // Uncomment if you want sign language to automatically resume
         return;
-    }
-    isRecognizing = true;
-    if (isRecognizing) {
-        startBtn.textContent = 'Stop Recognition';
+
+    } else if (isRecognizing) {
+        // 2. If Speech is NOT active, handle Gesture Stop logic
+        isRecognizing = false;
+        startBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+            </svg>
+            Start Recognition
+        `;
+        startBtn.classList.remove('btn-secondary');
+        startBtn.classList.add('btn-primary');
+        gestureText.textContent = 'Awaiting Gesture...';
+        translationText.textContent = '';
+        captionOutput.textContent = 'Caption will appear here after starting recognition...';
+        return;
+        
     } else {
-        startBtn.textContent = 'Start Recognition';
-        gestureText.textContent = '—';
-        gestureConfidence.textContent = 'Confidence: 0%';
+        // 3. If NEITHER is active, decide what to start.
+        // Based on the button text "Start Recognition," we assume you want to start the main sign language detection. 
+        // We will only start the S-T-T if you haven't loaded training data for sign language.
+        
+        if (trainingData.length === 0) {
+            alert('Please load training data first, or click OK to start Voice Captions.');
+            
+            // Start the S-T-T as an alternative
+            try {
+                speechRecognitionInstance.start();
+            } catch (e) {
+                if (e.name !== 'InvalidStateError') {
+                    console.error("Error starting speech recognition:", e);
+                }
+            }
+        } else {
+            // Start the main Gesture Recognition
+            isRecognizing = true;
+            startBtn.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+                Stop Recognition
+            `;
+            startBtn.classList.remove('btn-primary');
+            startBtn.classList.add('btn-secondary');
+            gestureText.textContent = 'Detecting...';
+            captionOutput.textContent = 'Sign Language recognition active.';
+        }
     }
 });
 // Play button animation
@@ -322,6 +373,76 @@ function drawFrame() {
             this.style.background = 'rgba(16, 185, 129, 0.15)';
         });
     });
+// Check for the Web Speech API and handle vendor prefixes
+
+if (SpeechRecognition) {
+    // 1. Initialize the SpeechRecognition object
+    speechRecognitionInstance = new SpeechRecognition();
+
+    // 2. Configuration for real-time captions
+    speechRecognitionInstance.continuous = true;     // Keep listening until manually stopped
+    speechRecognitionInstance.interimResults = true; // Show results that are not yet final
+    speechRecognitionInstance.lang = 'en-US';        // Set the default language
+
+    // 3. Event handler for when the recognition starts
+    speechRecognitionInstance.onstart = () => {
+        isListeningToSpeech = true;
+        // The startBtn update for S-T-T is now handled by the unified click listener
+        captionOutput.textContent = 'Listening... Speak now.';
+        
+        // Disable gesture recognition while speech is active
+        isRecognizing = false;
+    };
+
+    // 4. Event handler for transcription results
+    speechRecognitionInstance.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript + ' '; 
+            } else {
+                interimTranscript += transcript;
+            }
+        }
+        
+        captionOutput.textContent = finalTranscript + interimTranscript;
+    };
+
+    // 5. Event handler for when the recognition ends
+    speechRecognitionInstance.onend = () => {
+        isListeningToSpeech = false;
+        // When speech recognition stops, update the UI to show the button is ready to start again.
+        startBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+            </svg>
+            Start Recognition
+        `;
+        captionOutput.textContent = 'Recognition stopped. Click Start to resume.';
+        startBtn.classList.remove('btn-secondary');
+        startBtn.classList.add('btn-primary');
+    };
+
+    // 6. Event handler for errors (e.g., microphone denied)
+    speechRecognitionInstance.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed') {
+            captionOutput.textContent = 'Error: Microphone access denied. Please allow permission in your browser settings.';
+        } else {
+            captionOutput.textContent = `Error: ${event.error}`;
+        }
+        speechRecognitionInstance.stop();
+    };
+
+} else {
+    // Fallback for unsupported browsers
+    startBtn.disabled = true;
+    startBtn.textContent = 'API Not Supported';
+    captionOutput.textContent = 'The Web Speech API is not supported by this browser. Please use Chrome, Edge, or a modern browser.';
+}
 
     // Add subtle hover effect to all cards
     document.querySelectorAll('.card, .gesture-card').forEach(card => {
