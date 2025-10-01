@@ -382,7 +382,6 @@ window.addEventListener('DOMContentLoaded', async () => {
             
             captionOutput.textContent = finalTranscript + interimTranscript;
         };
-<<<<<<< HEAD
     speechRecognitionInstance.onend = () => {
     isListeningToSpeech = false;
     if (speechStarted) { 
@@ -394,52 +393,11 @@ window.addEventListener('DOMContentLoaded', async () => {
             isListeningToSpeech = true; 
             return; 
         } catch (e) {
-=======
-
-        //Event handler for when the recognition ends
-        // speechRecognitionInstance.onend = () => {
-        //     isListeningToSpeech = false;
-        //     startBtn.innerHTML = `
-        //         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-        //             <path d="M8 5v14l11-7z"/>
-        //         </svg>
-        //         Start Recognition
-        //     `;
-        //     captionOutput.textContent = 'Recognition stopped. Click Start to resume.';
-        //     startBtn.classList.remove('btn-secondary');
-        //     startBtn.classList.add('btn-primary');
-        // };
-   // Start of speechRecognitionInstance.onend (REPLACE existing block)
-    speechRecognitionInstance.onend = () => {
-    isListeningToSpeech = false;
-    
-    // Check if the user's intent to use speech recognition is still active.
-    // We use speechStarted to know if the user clicked the 'Start' button.
-    if (speechStarted) { 
-        // 1. If the user *meant* to start it, try to restart it immediately.
-        try {
-            speechRecognitionInstance.start(); 
-            // Update the UI *after* the successful start is requested.
-            captionOutput.textContent = isRecognizing ? 
-                'Voice Captions: Listening... (Sign Language active)' : 
-                'Listening... Speak now.';
-            isListeningToSpeech = true; // Set flag back to true for next loop
-            return; // Exit here if restart is successful
-        } catch (e) {
-            // This is often an InvalidStateError if it's still shutting down.
-            // We console.log it, but don't stop the whole process.
->>>>>>> 989cf6bb295a08f46868e22d38a1a1b77eadab77
             console.warn("Speech restart failed (likely InvalidStateError):", e.message);
         }
     } 
     
-<<<<<<< HEAD
     if (!isRecognizing && !speechStarted) { 
-=======
-    // 2. If we reach this point, the restart failed or was not intended (speechStarted is false).
-    // Now, check if we should perform the full STOP UI reset.
-    if (!isRecognizing && !speechStarted) { // Only reset UI if BOTH modes are definitely off
->>>>>>> 989cf6bb295a08f46868e22d38a1a1b77eadab77
         startBtn.innerHTML = `
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z"/>
@@ -450,20 +408,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         startBtn.classList.remove('btn-secondary');
         startBtn.classList.add('btn-primary');
     } else if (isRecognizing) {
-<<<<<<< HEAD
        
         captionOutput.textContent = 'Sign Language recognition is still active, but Voice Captions stopped.';
     }
 };
 
-=======
-        // Sign Recognition is still running, but Speech has failed/stopped for now.
-        captionOutput.textContent = 'Sign Language recognition is still active, but Voice Captions stopped.';
-    }
-};
-// End of speechRecognitionInstance.onend (End of replacement)
-// 6. Event handler for errors (e.g., microphone denied)
->>>>>>> 989cf6bb295a08f46868e22d38a1a1b77eadab77
         speechRecognitionInstance.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
             if (event.error === 'not-allowed') {
