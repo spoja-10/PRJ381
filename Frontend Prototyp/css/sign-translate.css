@@ -241,7 +241,7 @@ body {
 }
 
 .camera-select-container {
-    position: vrelative;
+    position: relative;
     display: inline-block;
     margin-left: auto;
 }
@@ -382,8 +382,32 @@ body {
     flex-wrap: nowrap;
 }
 
+/* Captions Styling */
 .captions {
-    margin-bottom: 1.5rem;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+}
+
+.translation-output {
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+    border-radius: 0 0 16px 16px; /* Rounded corners only at the bottom */
+    padding: 0.5rem 1rem; /* Reduced padding for compactness */
+    border: none; /* Remove border for cleaner look */
+    margin: 0; /* Remove margin to fit snugly */
+}
+
+.translation-text {
+    font-size: 0.9rem; /* Smaller font size */
+    margin: 0; /* Remove margin for tight fit */
+    min-height: auto; /* Remove min-height to make compact */
+    display: block; /* Ensure text is block-level for proper alignment */
+    line-height: 1.4; /* Slightly tighter line height */
+    color: var(--text-light); /* Bright text for readability */
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* Subtle shadow for text clarity */
 }
 
 /* Results Section */
@@ -418,25 +442,6 @@ body {
     font-size: 0.95rem;
     opacity: 0.8;
     color: var(--text-muted);
-}
-
-.translation-output {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    padding: 1.75rem;
-    margin-bottom: 1.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.translation-text {
-    font-size: 1.15rem;
-    margin-bottom: 1.5rem;
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    line-height: 1.6;
-    color: var(--text);
-    font-weight: 500;
 }
 
 /* Floating particles background */
@@ -555,6 +560,10 @@ body {
     .camera-select-container {
         margin-left: 0;
         width: 100%;
+    }
+    
+    .translation-text {
+        font-size: 0.8rem; /* Even smaller font size for small screens */
     }
     
     #cameraSelect {
