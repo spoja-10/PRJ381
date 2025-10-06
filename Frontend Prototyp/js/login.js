@@ -120,67 +120,57 @@
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     }
-
-    // Form submission
+    //login
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
         const loginBtn = document.getElementById('login-btn');
-        
+
         // Clear previous errors
         document.getElementById('login-email-error').classList.remove('show');
         document.getElementById('login-password-error').classList.remove('show');
-        
-        // Validate email
+
+        //validate email
         if (!validateEmail(email)) {
             document.getElementById('login-email-error').textContent = 'Please enter a valid email address';
             document.getElementById('login-email-error').classList.add('show');
             return;
         }
-        
         // Show loading state
         loginBtn.disabled = true;
         loginBtn.innerHTML = '<div class="loading-spinner"></div> Signing In...';
-        
         try {
-            // Simulate API call
-            const response = await fetch('/api/login', {
+            // Make API call to backend server
+            const response = await fetch('http://localhost:3000/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ email, password })
-            });
-            
-            // For demo purposes, simulate successful login
-            setTimeout(() => {
-                if (email === 'demo@example.com' && password === 'demo123') {
-                    // Redirect to main app
-                    window.location.href = 'sign-translate.html';
-                } else if (email === 'admin@example.com' && password === 'admin123') {
-                    // Redirect to admin dashboard
-                    window.location.href = 'sign-translate.html';
-
-                } else {
-                    // Show error
-                    document.getElementById('login-password-error').textContent = 'Invalid email or password';
-                    document.getElementById('login-password-error').classList.add('show');
-                    loginBtn.disabled = false;
-                    loginBtn.innerHTML = 'Sign In';
-                }
-            }, 1500);
-            
+        });
+            const result = await response.json();
+            if (response.ok && result.success){
+                //Successful login verified by server
+                alert('Login successful! Redirecting...');
+                window.location.href = "sign-translate.html";
+            } else {
+                //failure invalid credentials handled by status 401 from server
+                document.getElementById('login-password-error').textContent = result.message || 'Invalid email or password';
+                document.getElementById('login-password-error').classList.add('show');
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Sign In';
+            }
         } catch (error) {
-            console.error('Login error:', error);
-            document.getElementById('login-password-error').textContent = 'An error occurred. Please try again.';
+            //network or server errot
+            console.error('Login network error:', error);
+            document.getElementById('login-password-error').textContent = 'A network error occurred. Make sure the Node.js server is running on port 3000.';
             document.getElementById('login-password-error').classList.add('show');
             loginBtn.disabled = false;
             loginBtn.innerHTML = 'Sign In';
         }
     });
-
+    //sign up
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -246,30 +236,45 @@
         
         try {
             // Simulate API call
-            const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name, email, password, role })
+            const response = await fetch('http://localhost:3000/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            // Sending name, email, and password to the server
+            body: JSON.stringify({ name, email, password, role })
             });
-            
-            // For demo purposes, simulate successful registration
-            setTimeout(() => {
-                // Show success message and switch to login
+            const result = await response.json();
+            if (response.ok){
                 alert('Account created successfully! Please sign in.');
                 showLogin.click();
-                signupBtn.disabled = false;
-                signupBtn.innerHTML = 'Create Account';
                 signupForm.reset();
-            }, 1500);
-            
+            } else {
+                alert('Registration failed: ${result.message || Server error}');
+            }
         } catch (error) {
-            console.error('Signup error:', error);
-            alert('An error occurred. Please try again.');
+            console.error('Signup network error:', error);
+            alert("A network error occurred. Make sure the Node.js server is running on port 3000.")
+        } finally {
             signupBtn.disabled = false;
             signupBtn.innerHTML = 'Create Account';
         }
+        //     // For demo purposes, simulate successful registration
+        //     setTimeout(() => {
+        //         // Show success message and switch to login
+        //         alert('Account created successfully! Please sign in.');
+        //         showLogin.click();
+        //         signupBtn.disabled = false;
+        //         signupBtn.innerHTML = 'Create Account';
+        //         signupForm.reset();
+        //     }, 1500);
+            
+        // } catch (error) {
+        //     console.error('Signup error:', error);
+        //     alert('An error occurred. Please try again.');
+        //     signupBtn.disabled = false;
+        //     signupBtn.innerHTML = 'Create Account';
+        // }
     });
 
     // Guest access
