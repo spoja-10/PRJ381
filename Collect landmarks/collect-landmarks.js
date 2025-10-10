@@ -163,6 +163,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('keydown', (e) => {
+        const target = e.target;
+        const isTypingInTextField = (
+            target && (
+                (target.tagName === 'INPUT' && (target.type === 'text' || target.type === 'search' || target.type === 'email' || target.type === 'url' || target.type === 'tel')) ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable
+            )
+        );
+
+        if (isTypingInTextField) return; // Don't trigger shortcuts while user is typing
+
         if (e.key === 's' || e.key === 'S') {
             e.preventDefault();
             saveCurrentFrame();
