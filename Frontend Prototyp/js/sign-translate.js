@@ -25,6 +25,8 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let speechRecognitionInstance = null;
     let isListeningToSpeech = false;
+    let lastSpeechError = null;
+    let userStoppedSpeech = false;
     
 
     // Translations mapping
@@ -48,46 +50,46 @@
     let speechStarted = false;
     // Floating particles animation
     function createParticles() {
-    const particlesContainer = document.getElementById('particles');
-    const particleCount = window.innerWidth < 768 ? 20 : 40;
-    
-    for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.classList.add('particle');
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = window.innerWidth < 768 ? 20 : 40;
         
-        // Random properties
-        const size = Math.random() * 3 + 1;
-        const posX = Math.random() * 100;
-        const posY = Math.random() * 100;
-        const delay = Math.random() * 5;
-        const duration = Math.random() * 10 + 10;
-        const opacity = Math.random() * 0.5 + 0.1;
-        
-        // Apply styles
-        particle.style.width = `${size}px`;
-        particle.style.height = `${size}px`;
-        particle.style.left = `${posX}%`;
-        particle.style.top = `${posY}%`;
-        particle.style.opacity = opacity;
-        particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
-        
-        // Add to container
-        particlesContainer.appendChild(particle);
-    }
-        
-    // Add floating animation
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0); }
-            25% { transform: translate(10px, 10px); }
-            50% { transform: translate(5px, -5px); }
-            75% { transform: translate(-5px, 5px); }
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Random properties
+            const size = Math.random() * 3 + 1;
+            const posX = Math.random() * 100;
+            const posY = Math.random() * 100;
+            const delay = Math.random() * 5;
+            const duration = Math.random() * 10 + 10;
+            const opacity = Math.random() * 0.5 + 0.1;
+            
+            // Apply styles
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${posX}%`;
+            particle.style.top = `${posY}%`;
+            particle.style.opacity = opacity;
+            particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
+            
+            // Add to container
+            particlesContainer.appendChild(particle);
         }
-    `;
-    document.head.appendChild(style);
-}
-// Initialize particles
+        
+        // Add floating animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0%, 100% { transform: translate(0, 0); }
+                25% { transform: translate(10px, 10px); }
+                50% { transform: translate(5px, -5px); }
+                75% { transform: translate(-5px, 5px); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    // Initialize particles
     createParticles();
 
 // Camera and MediaPipe Logic
@@ -117,18 +119,18 @@ hands.setOptions({
             if (result.confidence > 70) {
                 gestureText.textContent = result.gesture || 'Unknown';
                 gestureConfidence.textContent = `Confidence: ${result.confidence.toFixed(1)}%`;
-                translationText.textContent = `Sign: "${translations[result.gesture] || 'No translation available'}"`;
+                setCaption(`Sign: "${translations[result.gesture] || 'No translation available'}"`);
                 
                 gestureCards.forEach(card => {
                     card.style.background = 'rgba(255, 255, 255, 0.05)';
                     if (card.dataset.gesture === result.gesture) {
                         card.style.background = 'rgba(16, 185, 129, 0.15)';
-                    }   
+                    }
                 });
             } else {
                 gestureText.textContent = 'No hand detected';
                 gestureConfidence.textContent = 'Confidence: 0%';
-                translationText.textContent = '';
+                setCaption('');
                 gestureCards.forEach(card => card.style.background = 'rgba(255, 255, 255, 0.05)');
             }
         }
@@ -136,7 +138,7 @@ hands.setOptions({
         if (isRecognizing) {
             gestureText.textContent = 'No hand detected';
             gestureConfidence.textContent = 'Confidence: 0%';
-            translationText.textContent = '';
+            setCaption('');
             gestureCards.forEach(card => card.style.background = 'rgba(255, 255, 255, 0.05)');
         }
     }
@@ -236,7 +238,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     await getCameras();
     if (cameraSelect.options.length > 0) {
         startCamera(cameraSelect.value);
-    } else {
+        } else {
         startCamera();
     }
     drawFrame();
@@ -269,22 +271,29 @@ window.addEventListener('DOMContentLoaded', async () => {
         isRecognizing = false;
         signStarted = false;
         speechStarted = false;
-        if (speechRecognitionInstance && isListeningToSpeech) {
-            speechRecognitionInstance.stop(); 
+        if (speechRecognitionInstance) {
+            try {
+                // Abort is more deterministic than stop for immediate user-initiated cancellation
+                speechRecognitionInstance.abort();
+            } catch (_) {}
+            // Mark that this was an intentional stop to prevent auto-restart
+            userStoppedSpeech = true;
+            // Drop the old instance to avoid stale state on next start
+            speechRecognitionInstance = null;
         }
+        isListeningToSpeech = false;
         
         // Reset the button and main UI elements immediately
-        startBtn.innerHTML = `
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z"/>
-            </svg>
-            Start Recognition
-        `;
+            startBtn.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                Start Recognition
+            `;
         startBtn.classList.remove('btn-secondary');
         startBtn.classList.add('btn-primary');
         gestureText.textContent = 'Awaiting Gesture...';
-        translationText.textContent = '';
-        captionOutput.textContent = 'Recognition stopped. Click Start to resume.'; // Neutral stop message
+            setCaption('Recognition stopped. Click Start to resume.'); // Neutral stop message
         
         return; // Exit the function after stopping
     } 
@@ -299,9 +308,18 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
 
         // B. Start Speech Recognition (Requires API support and user permission)
-        if (speechRecognitionInstance) {
+        if (SpeechRecognition) {
+            // Recreate a fresh instance each time we start to avoid stale internal state
+            initSpeechRecognition();
             try {
-                speechRecognitionInstance.start(); 
+                // Defer start a bit more to avoid InvalidStateError in Chrome after recreation
+                setTimeout(() => {
+                    requestAnimationFrame(() => {
+                        try { speechRecognitionInstance && speechRecognitionInstance.start(); } catch (e) {
+                            if (e.name !== 'InvalidStateError') { console.error('Error starting speech recognition:', e); }
+                        }
+                    });
+                }, 200);
                 // startedFeatures.push("Voice Captions");
                 speechStarted = true;
             } catch (e) {
@@ -320,17 +338,17 @@ window.addEventListener('DOMContentLoaded', async () => {
 
             // Provide immediate feedback to the user
             if (signStarted && speechStarted) {
-                 captionOutput.textContent = 'Voice Captions: Listening... (Sign Language active in panel)';                 // Voice Captions onstart will refine this to '...are active.'
+                 setCaption('Voice Captions: Listening... (Sign Language active in panel)');                 // Voice Captions onstart will refine this to '...are active.'
             } else if (signStarted) {
-                  captionOutput.textContent = 'Sign Language Recognition active. Voice Captions failed/unavailable.';
+                  setCaption('Sign Language Recognition active. Voice Captions failed/unavailable.');
             } else if (speechStarted) {
-                 captionOutput.textContent = 'Starting Voice Captions...';
+                 setCaption('Starting Voice Captions...');
                  // Voice Captions onstart will refine this to 'Listening... Speak now.'
             }
         } else {
             // Nothing started
             alert('Cannot start. Please load training data, or check browser microphone support/permission.');
-            captionOutput.textContent = 'Recognition failed to start.';
+            setCaption('Recognition failed to start.');
         }    }
 });
     // Gesture card interactions
@@ -340,7 +358,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             
             gestureText.textContent = gesture;
             gestureConfidence.textContent = `Confidence: ${Math.floor(Math.random() * 10) + 85}.${Math.floor(Math.random() * 10)}%`;
-            translationText.textContent = `"${translations[gesture]}"`;
+            setCaption(`"${translations[gesture]}"`);
             
             // Highlight selected card
             gestureCards.forEach(c => {
@@ -351,83 +369,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (SpeechRecognition) {
-        speechRecognitionInstance = new SpeechRecognition();
-
-        speechRecognitionInstance.continuous = true;     
-        speechRecognitionInstance.interimResults = true; 
-        speechRecognitionInstance.lang = 'en-US';        
-        speechRecognitionInstance.onstart = () => {
-            isListeningToSpeech = true;
-            if (isRecognizing) {
-                captionOutput.textContent = 'Voice Captions: Listening... Speak now.';
-            } else {
-                captionOutput.textContent = 'Listening... Speak now.';
-            }
-            // isRecognizing = false;
-        };
-
-        //Event handler for transcription results
-        speechRecognitionInstance.onresult = (event) => {
-            let interimTranscript = '';
-            let finalTranscript = '';
-
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                const transcript = event.results[i][0].transcript;
-                if (event.results[i].isFinal) {
-                    finalTranscript += transcript + ' '; 
-                } else {
-                    interimTranscript += transcript;
-                }
-            }
-            
-            captionOutput.textContent = finalTranscript + interimTranscript;
-        };
-    speechRecognitionInstance.onend = () => {
-    isListeningToSpeech = false;
-    if (speechStarted) { 
-        try {
-            speechRecognitionInstance.start(); 
-            captionOutput.textContent = isRecognizing ? 
-                'Voice Captions: Listening... (Sign Language active)' : 
-                'Listening... Speak now.';
-            isListeningToSpeech = true; 
-            return; 
-        } catch (e) {
-            console.warn("Speech restart failed (likely InvalidStateError):", e.message);
-        }
-    } 
-    
-    if (!isRecognizing && !speechStarted) { 
-        startBtn.innerHTML = `
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z"/>
-            </svg>
-            Start Recognition
-        `;
-        captionOutput.textContent = 'Recognition stopped. Click Start to resume.';
-        startBtn.classList.remove('btn-secondary');
-        startBtn.classList.add('btn-primary');
-    } else if (isRecognizing) {
-       
-        captionOutput.textContent = 'Sign Language recognition is still active, but Voice Captions stopped.';
-    }
-};
-
-        speechRecognitionInstance.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
-            if (event.error === 'not-allowed') {
-                captionOutput.textContent = 'Error: Microphone access denied. Please allow permission in your browser settings.';
-            } else {
-                captionOutput.textContent = `Error: ${event.error}`;
-            }
-            speechRecognitionInstance.stop();
-        };
-
+        // Initialize once at load so we can detect support; we will recreate on start
+        initSpeechRecognition();
     } else {
         // Fallback for unsupported browsers
         startBtn.disabled = true;
         startBtn.textContent = 'API Not Supported';
-        captionOutput.textContent = 'The Web Speech API is not supported by this browser. Please use Chrome, Edge, or a modern browser.';
+        setCaption('The Web Speech API is not supported by this browser. Please use Chrome, Edge, or a modern browser.');
     }
     // Add subtle hover effect to all cards
     document.querySelectorAll('.card, .gesture-card').forEach(card => {
@@ -444,6 +392,103 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
+// Build a fresh SpeechRecognition instance and wire handlers
+function initSpeechRecognition() {
+    if (!SpeechRecognition) { return; }
+    try {
+        speechRecognitionInstance = new SpeechRecognition();
+    } catch (e) {
+        console.error('Failed to create SpeechRecognition:', e);
+        speechRecognitionInstance = null;
+        return;
+    }
+
+    speechRecognitionInstance.continuous = true;
+    speechRecognitionInstance.interimResults = true;
+    speechRecognitionInstance.lang = 'en-US';
+
+    speechRecognitionInstance.onstart = () => {
+        isListeningToSpeech = true;
+        lastSpeechError = null;
+        if (isRecognizing) {
+            captionOutput.textContent = 'Voice Captions: Listening... Speak now.';
+        } else {
+            captionOutput.textContent = 'Listening... Speak now.';
+        }
+    };
+
+    speechRecognitionInstance.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript + ' ';
+            } else {
+                interimTranscript += transcript;
+            }
+        }
+            setCaption(finalTranscript + interimTranscript);
+    };
+
+    speechRecognitionInstance.onend = () => {
+        isListeningToSpeech = false;
+        // Prevent auto-restart if user explicitly stopped
+        if (userStoppedSpeech) {
+            userStoppedSpeech = false; // consume the flag
+            speechStarted = false;
+            return;
+        }
+        // If we didn't stop via button and still in active mode, try to restart
+        if (speechStarted && !lastSpeechError) {
+            // Auto-restart loop for continuous captions while active
+            try {
+                speechRecognitionInstance.start();
+            setCaption(isRecognizing ? 
+                    'Voice Captions: Listening... (Sign Language active)' :
+                'Listening... Speak now.');
+                isListeningToSpeech = true;
+                return;
+            } catch (e) {
+                // Will often be InvalidStateError if already starting; ignore
+                if (e.name !== 'InvalidStateError') {
+                    console.warn('Speech restart failed:', e.message);
+                }
+            }
+        }
+
+        if (!isRecognizing && !speechStarted) {
+        startBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+            </svg>
+            Start Recognition
+        `;
+        setCaption('Recognition stopped. Click Start to resume.');
+            startBtn.classList.remove('btn-secondary');
+            startBtn.classList.add('btn-primary');
+        } else if (isRecognizing) {
+        setCaption('Sign Language recognition is still active, but Voice Captions stopped.');
+        }
+    };
+
+    speechRecognitionInstance.onerror = (event) => {
+        lastSpeechError = event.error || 'unknown';
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed') {
+            setCaption('Error: Microphone access denied. Please allow permission in your browser settings.');
+        } else if (event.error === 'no-speech' || event.error === 'audio-capture') {
+            setCaption('No speech detected. Click Start and try again.');
+        } else {
+            setCaption("Voice captions ended");
+        }
+        try { speechRecognitionInstance.abort(); } catch (_) {}
+        isListeningToSpeech = false;
+        // Mark speech as not started so the next click builds a fresh instance
+        speechStarted = false;
+    };
+}
+
 window.addEventListener('beforeunload', () => {
     if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -458,4 +503,15 @@ function drawFrame() {
     requestAnimationFrame(drawFrame);
 }
 let recognitionInterval;
+
+// Always write captions to the dedicated span so the container DOM isn't replaced
+function setCaption(text) {
+    try {
+        captionOutput.textContent = text || '';
+    } catch (_) {
+        // If the span was somehow removed, fall back to the container
+        const fallback = document.getElementById('captionDisplay');
+        if (fallback) { fallback.textContent = text || ''; }
+    }
+}
 
