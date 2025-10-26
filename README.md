@@ -29,6 +29,7 @@ GestureAI is a real-time hand gesture recognition system that enables users to c
 -  **Real-time Camera Feed**: Live video capture and processing
 -  **AI Gesture Recognition**: Hand gesture detection using MediaPipe
 -  **Text-to-Speech**: Convert recognized gestures to spoken words
+-  **Speech-to-Text Captions**: Provides live, continuous transcription of spoken words using the Web Speech API.
 -  **Confidence Scoring**: Real-time confidence metrics for gesture recognition
 -  **Modern UI**: Responsive design with particle animations
 -  **Cross-platform**: Works on desktop and mobile browsers
@@ -293,5 +294,6 @@ For support and questions:
 - Ensure all prerequisites are installed correctly
 
 ---
+
 
 **Note**: This application requires camera access and works best in well-lit environments. Make sure to grant camera permissions when prompted by your browser.
